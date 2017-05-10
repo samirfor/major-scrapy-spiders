@@ -3,14 +3,11 @@ import json
 
 from scrapy import Spider, Item, Field
 
-from mss.utils import get_extracted
-
-
 class InstagramProfileItems(Item):
     is_private = Field()
     posts = Field()
     username = Field()
-    bio = Field()
+    biography = Field()
     website = Field()
     profile_picture = Field()
     full_name = Field()
@@ -19,25 +16,27 @@ class InstagramProfileItems(Item):
     following = Field()
 
 class Instagram(Spider):
-    name = "Instagram"
-    start_urls = ["http://instagram.com/nike/"]
+    name = 'Instagram'
+    start_urls = [
+        'https://instagram.com/nike/',
+    ]
 
     download_delay = 0.5
 
     def parse(self, response):
-        javascript = "".join(response.xpath('//script[contains(text(), "sharedData")]/text()').extract())
-        json_data = json.loads("".join(re.findall(r'window._sharedData = (.*);', javascript)))
+        javascript = ''.join(response.xpath('//script[contains(text(), "sharedData")]/text()').extract())
+        json_data = json.loads(''.join(re.findall(r'window._sharedData = (.*);', javascript)))
 
         item = InstagramProfileItems()
-        data = get_extracted(json_data["entry_data"]["UserProfile"])
-        item["is_private"] = data["relationship"]["is_private"]
-        item["posts"] = data["userMedia"]
-        item["username"] = data["user"]["username"]
-        item["bio"] = data["user"]["bio"]
-        item["website"] = data["user"]["website"]
-        item["profile_picture"] = data["user"]["profile_picture"]
-        item["full_name"] = data["user"]["full_name"]
-        item["total_posts"] = data["user"]["counts"]["media"]
-        item["followers"] = data["user"]["counts"]["followed_by"]
-        item["following"] = data["user"]["counts"]["follows"]
+        data = json_data['entry_data']['ProfilePage'][0]['user']
+        item['is_private'] = data['is_private']
+        item['posts'] = data['media']['nodes']
+        item['username'] = data['username']
+        item['biography'] = data['biography']
+        item['website'] = data['external_url']
+        item['profile_picture'] = data['profile_pic_url_hd']
+        item['full_name'] = data['full_name']
+        item['total_posts'] = data['media']['count']
+        item['followers'] = data['followed_by']['count']
+        item['following'] = data['follows']['count']
         return item
